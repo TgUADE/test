@@ -21,7 +21,9 @@ def leer_respuestas(ser, stop_event):
     buffer = ""
     while not stop_event.is_set():
         if ser.in_waiting:
-            buffer += ser.read(ser.in_waiting).decode("ascii", errors="replace")
+            raw = ser.read(ser.in_waiting)
+            print(f"  [RAW] {raw}", flush=True)
+            buffer += raw.decode("ascii", errors="replace")
             while ";;" in buffer:
                 msg, buffer = buffer.split(";;", 1)
                 msg = msg.strip()
