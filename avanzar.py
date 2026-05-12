@@ -24,13 +24,19 @@ def leer_respuestas(ser, stop_event):
             buffer += ser.read(ser.in_waiting).decode("ascii", errors="replace")
             while ";;" in buffer:
                 msg, buffer = buffer.split(";;", 1)
-                if msg.strip():
-                    print(f"  << placa: {msg.strip()}")
+                msg = msg.strip()
+                if not msg:
+                    continue
+                if "@speed:" in msg:
+                    valor = msg.split("@speed:")[-1].split(";")[0]
+                    print(f"  [HALL] velocidad leida: {valor}")
+                else:
+                    print(f"  << placa: {msg}")
         time.sleep(0.05)
 
 
 def enviar(ser, comando):
-    print(f"  >> enviado: {comando.strip()}")
+    print(f"  >> {comando.strip()}")
     ser.write(comando.encode("ascii"))
     time.sleep(0.3)
 
@@ -42,7 +48,7 @@ if puerto is None:
         print(f"  {p.device} - {p.description}")
     exit(1)
 
-print(f"Conectando a {puerto} ({BAUDRATE} baud)...")
+print(f"Conectando a {puerto} ({BAUDRATE} baud)...\n")
 
 with serial.Serial(puerto, BAUDRATE, timeout=0.5) as ser:
     time.sleep(1)
@@ -52,12 +58,17 @@ with serial.Serial(puerto, BAUDRATE, timeout=0.5) as ser:
     t = threading.Thread(target=leer_respuestas, args=(ser, stop_event), daemon=True)
     t.start()
 
-    print("\nInicializando bateria...")
     enviar(ser, "#batteryCapacity:6000;;\r\n")
-    time.sleep(0.5)
 
-    print("\nHabilitando motor (KL 30)...")
+    print("Habilitando motor (KL 30)...")
     enviar(ser, "#kl:30;;\r\n")
+    time.sleep(0.3)
+
+    # habilitar sensores (igual que hace el brain tras KL 30)
+    enviar(ser, "#battery:1;;\r\n")
+    enviar(ser, "#instant:1;;\r\n")
+    enviar(ser, "#imu:1;;\r\n")
+    enviar(ser, "#resourceMonitor:1;;\r\n")
     time.sleep(0.5)
 
     print(f"\nAvanzando a velocidad {VELOCIDAD}...")
@@ -69,7 +80,7 @@ with serial.Serial(puerto, BAUDRATE, timeout=0.5) as ser:
     enviar(ser, "#speed:0;;\r\n")
     time.sleep(0.2)
     enviar(ser, "#kl:0;;\r\n")
-    time.sleep(0.5)
+    time.sleep(1)
 
     stop_event.set()
 
