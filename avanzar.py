@@ -7,11 +7,15 @@ VELOCIDAD = 100  # rango: 0 a 999
 
 
 def encontrar_puerto_stm32():
-    for port in serial.tools.list_ports.comports():
+    puertos = serial.tools.list_ports.comports()
+    for port in puertos:
         desc = (port.description or "").upper()
-        # STM32 Nucleo aparece con VID 0x0483 (STMicroelectronics)
-        if port.vid == 0x0483 or "STM" in desc or "NUCLEO" in desc:
+        # STM32 Nucleo via ST-Link (VID 0x0483) o via CP2102 USB-UART (VID 0x10C4)
+        if port.vid in (0x0483, 0x10C4) or "STM" in desc or "NUCLEO" in desc or "CP210" in desc:
             return port.device
+    # Si solo hay un puerto disponible, usarlo directamente
+    if len(puertos) == 1:
+        return puertos[0].device
     return None
 
 
