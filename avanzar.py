@@ -45,6 +45,10 @@ with serial.Serial(puerto, BAUDRATE, timeout=0.5) as ser:
     time.sleep(1)
     ser.reset_input_buffer()
 
+    print("\nInicializando bateria...")
+    enviar(ser, "#batteryCapacity:6000;;\r\n")
+    time.sleep(0.5)
+
     print("\nHabilitando motor (KL 30)...")
     enviar(ser, "#kl:30;;\r\n")
     time.sleep(0.5)
